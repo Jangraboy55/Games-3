@@ -1,0 +1,494 @@
+<!-- ===== 2048 Game ===== -->
+<canvas id="canvas2048" width="320" height="480"></canvas>
+<button class="restart" onclick="start2048()">Restart 2048</button>
+
+<script>
+function start2048(){
+  const canvas=document.getElementById('canvas2048');
+  const ctx=canvas.getContext('2d');
+  canvas.style.display='block';
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  let board=[[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+  let score=0;
+
+  function addRandom(){
+    let empty=[];
+    for(let i=0;i<4;i++)
+      for(let j=0;j<4;j++)
+        if(!board[i][j]) empty.push([i,j]);
+    if(empty.length){
+      let [i,j]=empty[Math.floor(Math.random()*empty.length)];
+      board[i][j]=Math.random()>0.1?2:4;
+    }
+  }
+
+  function drawBoard(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle='lightgray';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.font='24px Arial';
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    for(let i=0;i<4;i++){
+      for(let j=0;j<4;j++){
+        ctx.fillStyle=board[i][j]? '#ffcc80':'#eee';
+        ctx.fillRect(j*70+25,i*70+100,70,70);
+        ctx.fillStyle='black';
+        if(board[i][j]) ctx.fillText(board[i][j], j*70+60, i*70+135);
+      }
+    }
+    document.getElementById('scoreBoard').innerText='Score: '+score;
+  }
+
+  function slide(row){
+    let arr=row.filter(n=>n);
+    for(let i=0;i<arr.length-1;i++){
+      if(arr[i]===arr[i+1]){
+        arr[i]*=2;
+        score+=arr[i];
+        arr[i+1]=0;
+      }
+    }
+    return arr.filter(n=>n);
+  }
+
+  function moveLeft(){
+    for(let i=0;i<4;i++){
+      let row=slide(board[i]);
+      while(row.length<4) row.push(0);
+      board[i]=row;
+    }
+    addRandom();
+    drawBoard();
+  }
+
+  function moveRight(){
+    for(let i=0;i<4;i++){
+      let row=slide(board[i].reverse());
+      while(row.length<4) row.push(0);
+      board[i]=row.reverse();
+    }
+    addRandom();
+    drawBoard();
+  }
+
+  function moveUp(){
+    for(let j=0;j<4;j++){
+      let col=slide([board[0][j],board[1][j],board[2][j],board[3][j]]);
+      while(col.length<4) col.push(0);
+      for(let i=0;i<4;i++) board[i][j]=col[i];
+    }
+    addRandom();
+    drawBoard();
+  }
+
+  function moveDown(){
+    for(let j=0;j<4;j++){
+      let col=slide([board[3][j],board[2][j],board[1][j],board[0][j]]);
+      while(col.length<4) col.push(0);
+      for(let i=0;i<4;i++) board[3-i][j]=col[i];
+    }
+    addRandom();
+    drawBoard();
+  }
+
+  addRandom(); addRandom(); drawBoard();
+
+  document.onkeydown=function(e){
+    switch(e.key){
+      case "ArrowLeft": moveLeft(); break;
+      case "ArrowRight": moveRight(); break;
+      case "ArrowUp": moveUp(); break;
+      case "ArrowDown": moveDown(); break;
+    }
+  }
+}
+</script>
+
+<!-- ===== Flappy Bird Game ===== -->
+<canvas id="canvasFlappy" width="320" height="480"></canvas>
+<button class="restart" onclick="startFlappy()">Restart Flappy Bird</button>
+
+<script>
+function startFlappy(){
+  const canvas=document.getElementById('canvasFlappy');
+  const ctx=canvas.getContext('2d');
+  canvas.style.display='block';
+  let birdY=240, birdX=50, velocity=0, gravity=0.5, lift=-8;
+  let pipes=[], frame=0, score=0;
+  const pipeGap=120;
+
+  function addPipe(){
+    let height=Math.random()*200+50;
+    pipes.push({x:canvas.width, height:height});
+  }
+
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    // Background
+    ctx.fillStyle='skyblue'; ctx.fillRect(0,0,canvas.width,canvas.height);
+    // Bird
+    ctx.fillStyle='yellow'; ctx.fillRect(birdX,birdY,30,30);
+    // Pipes
+    ctx.fillStyle='green';
+    pipes.forEach(p=>{
+      ctx.fillRect(p.x,0,40,p.height);
+      ctx.fillRect(p.x,p.height+pipeGap,40,canvas.height);
+    });
+    // Score
+    document.getElementById('scoreBoard').innerText='Score: '+score;
+  }
+
+  function update(){
+    velocity+=gravity;
+    birdY+=velocity;
+
+    frame++;
+    if(frame%90===0) addPipe();
+
+    pipes.forEach(p=>p.x-=2);
+    pipes=pipes.filter(p=>p.x+40>0);
+
+    // Check collision
+    for(let p of pipes){
+      if(birdX+30>p.x && birdX< p.x+40){
+        if(birdY<p.height || birdY+30>p.height+pipeGap){
+          alert('Game Over! Score: '+score);
+          startFlappy(); // restart
+        }
+      }
+    }
+
+    // Ground / Ceiling
+    if(birdY+30>canvas.height || birdY<0){
+      alert('Game Over! Score: '+score);
+      startFlappy();
+    }
+
+    // Update score
+    pipes.forEach(p=>{
+      if(p.x+40 === birdX) score++;
+    });
+
+    draw();
+  }
+
+  document.onkeydown=function(e){if(e.key===' ') velocity=lift;}
+  setInterval(update,20);
+}
+  </script>
+
+  <!-- ===== Puzzle Game ===== -->
+<canvas id="canvasPuzzle" width="320" height="480"></canvas>
+<button class="restart" onclick="startPuzzle()">Restart Puzzle Game</button>
+
+<script>
+function startPuzzle(){
+  const canvas = document.getElementById('canvasPuzzle');
+  const ctx = canvas.getContext('2d');
+  canvas.style.display='block';
+  const size = 4; // 4x4 puzzle
+  const tileSize = 100;
+  let board=[], empty=[size-1, size-1];
+
+  // Initialize board
+  function initBoard(){
+    board=[];
+    let nums=[];
+    for(let i=1;i<size*size;i++) nums.push(i);
+    nums.push(0); // empty tile
+    while(nums.length){
+      let r = Math.floor(Math.random()*nums.length);
+      board.push(nums.splice(r,1)[0]);
+    }
+  }
+
+  function drawBoard(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for(let i=0;i<size;i++){
+      for(let j=0;j<size;j++){
+        let num = board[i*size+j];
+        ctx.fillStyle = num? '#ffcc80':'#eee';
+        ctx.fillRect(j*tileSize+10,i*tileSize+50,tileSize-5,tileSize-5);
+        ctx.fillStyle='black';
+        ctx.font='24px Arial';
+        ctx.textAlign='center'; ctx.textBaseline='middle';
+        if(num) ctx.fillText(num,j*tileSize+10+tileSize/2,i*tileSize+50+tileSize/2);
+      }
+    }
+  }
+
+  function moveTile(i,j){
+    let idx=i*size+j;
+    let emptyIdx=empty[0]*size+empty[1];
+    if((Math.abs(i-empty[0])===1 && j===empty[1]) || (Math.abs(j-empty[1])===1 && i===empty[0])){
+      board[emptyIdx]=board[idx];
+      board[idx]=0;
+      empty=[i,j];
+      drawBoard();
+      if(isSolved()) setTimeout(()=>alert('Puzzle Solved!'),100);
+    }
+  }
+
+  function isSolved(){
+    for(let i=0;i<size*size-1;i++) if(board[i]!==i+1) return false;
+    return true;
+  }
+
+  canvas.onclick=function(e){
+    let rect=canvas.getBoundingClientRect();
+    let x=e.clientX-rect.left;
+    let y=e.clientY-rect.top;
+    let j=Math.floor(x/tileSize);
+    let i=Math.floor((y-50)/tileSize);
+    moveTile(i,j);
+  }
+
+  initBoard(); drawBoard();
+}
+</script>
+
+<!-- ===== Chess Game ===== -->
+<canvas id="canvasChess" width="320" height="480"></canvas>
+<button class="restart" onclick="startChess()">Restart Chess</button>
+
+<script>
+function startChess(){
+  const canvas = document.getElementById('canvasChess');
+  const ctx = canvas.getContext('2d');
+  canvas.style.display='block';
+  const rows = 8, cols = 8;
+  const tile = 50;
+  let selected = null;
+
+  // Initialize board with pieces (simple symbols for demo)
+  let board = [
+    ['r','n','b','q','k','b','n','r'],
+    ['p','p','p','p','p','p','p','p'],
+    ['','','','','','','',''],
+    ['','','','','','','',''],
+    ['','','','','','','',''],
+    ['','','','','','','',''],
+    ['P','P','P','P','P','P','P','P'],
+    ['R','N','B','Q','K','B','N','R']
+  ];
+
+  const pieceSymbols = {
+    'r':'♜','n':'♞','b':'♝','q':'♛','k':'♚','p':'♟',
+    'R':'♖','N':'♘','B':'♗','Q':'♕','K':'♔','P':'♙'
+  };
+
+  function drawBoard(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for(let i=0;i<rows;i++){
+      for(let j=0;j<cols;j++){
+        ctx.fillStyle=(i+j)%2?'#b58863':'#f0d9b5';
+        ctx.fillRect(j*tile,i*tile,tile,tile);
+        if(board[i][j]){
+          ctx.fillStyle=(board[i][j]===board[i][j].toUpperCase())?'white':'black';
+          ctx.font='32px Arial';
+          ctx.textAlign='center'; ctx.textBaseline='middle';
+          ctx.fillText(pieceSymbols[board[i][j]], j*tile+tile/2, i*tile+tile/2);
+        }
+      }
+    }
+    if(selected){
+      ctx.strokeStyle='red'; ctx.lineWidth=3;
+      ctx.strokeRect(selected.j*tile,selected.i*tile,tile,tile);
+    }
+  }
+
+  canvas.onclick=function(e){
+    let rect=canvas.getBoundingClientRect();
+    let j=Math.floor((e.clientX-rect.left)/tile);
+    let i=Math.floor((e.clientY-rect.top)/tile);
+
+    if(selected){
+      // Move piece (no rules enforcement yet)
+      board[i][j]=board[selected.i][selected.j];
+      board[selected.i][selected.j]='';
+      selected=null;
+      drawBoard();
+    } else if(board[i][j]!==''){
+      selected={i,j};
+      drawBoard();
+    }
+  }
+
+  drawBoard();
+}
+</script>
+
+<!-- ===== Rolling Ball Maze ===== -->
+<div class="game-container" id="gameBall"></div>
+<button class="restart" onclick="startBall()">Restart Rolling Ball Maze</button>
+
+<script>
+function startBall(){
+  const container=document.getElementById('gameBall');
+  container.style.display='block';
+  container.innerHTML=''; // clear previous
+
+  // Ball
+  const ball=document.createElement('div');
+  ball.className='ball';
+  container.appendChild(ball);
+  let ballPos={x:140,y:400};
+  let velocity={x:0,y:0};
+  const gravity=0.5;
+
+  // Obstacles
+  let obstacles=[];
+  for(let i=0;i<5;i++){
+    let obs=document.createElement('div');
+    obs.className='enemy';
+    obs.style.width='40px'; obs.style.height='40px';
+    obs.style.top=(i*80)+'px';
+    obs.style.left=Math.random()*280+'px';
+    container.appendChild(obs);
+    obstacles.push(obs);
+  }
+
+  // Score
+  let score=0;
+  function updateScore(){document.getElementById('scoreBoard').innerText='Score: '+score;}
+
+  // Game loop
+  gameInterval=setInterval(()=>{
+    velocity.y+=gravity;
+    ballPos.y+=velocity.y;
+    ballPos.x+=velocity.x;
+
+    if(ballPos.y>440) {ballPos.y=440; velocity.y=0;}
+    if(ballPos.y<0) {ballPos.y=0; velocity.y=0;}
+    if(ballPos.x<0) ballPos.x=0;
+    if(ballPos.x>280) ballPos.x=280;
+
+    ball.style.top=ballPos.y+'px';
+    ball.style.left=ballPos.x+'px';
+
+    // Check collision
+    obstacles.forEach(o=>{
+      let ox=parseInt(o.style.left), oy=parseInt(o.style.top);
+      if(ballPos.x+40>ox && ballPos.x<ox+40 && ballPos.y+40>oy && ballPos.y<oy+40){
+        alert('Game Over! Score: '+score);
+        startBall();
+      }
+      o.style.top=(oy+2)%480+'px'; // move obstacle down
+      if(o.style.top==='0px') score++;
+    });
+    updateScore();
+  },20);
+
+  document.onkeydown=function(e){
+    if(e.key==='ArrowLeft') velocity.x=-3;
+    else if(e.key==='ArrowRight') velocity.x=3;
+    else if(e.key==='ArrowUp') velocity.y=-5;
+  }
+}
+</script>
+
+<!-- ===== Space Shooter ===== -->
+<div class="game-container" id="gameShooter"></div>
+<button class="restart" onclick="startShooter()">Restart Space Shooter</button>
+
+<script>
+function startShooter(){
+  const container=document.getElementById('gameShooter');
+  container.style.display='block';
+  container.innerHTML=''; // clear previous
+
+  // Player
+  const player=document.createElement('div');
+  player.className='ball'; // reuse ball class as ship
+  player.style.background='blue';
+  container.appendChild(player);
+  let playerPos={x:140,y:420};
+
+  // Bullets
+  let bullets=[];
+
+  // Enemies
+  let enemies=[];
+  for(let i=0;i<5;i++){
+    let enemy=document.createElement('div');
+    enemy.className='enemy';
+    enemy.style.top=(i*60)+'px';
+    enemy.style.left=Math.random()*280+'px';
+    container.appendChild(enemy);
+    enemies.push(enemy);
+  }
+
+  // Score
+  let score=0;
+  function updateScore(){document.getElementById('scoreBoard').innerText='Score: '+score;}
+
+  // Game loop
+  gameInterval=setInterval(()=>{
+    // Move bullets
+    bullets.forEach((b,i)=>{
+      b.y-=5;
+      b.elem.style.top=b.y+'px';
+      if(b.y<0){container.removeChild(b.elem); bullets.splice(i,1);}
+    });
+
+    // Move enemies down
+    enemies.forEach((e)=>{
+      let ey=parseInt(e.style.top);
+      ey+=2;
+      if(ey>460){ey=0; e.style.left=Math.random()*280+'px';}
+      e.style.top=ey+'px';
+
+      // Collision with player
+      if(playerPos.x+40>parseInt(e.style.left) && playerPos.x<parseInt(e.style.left)+40 &&
+         playerPos.y+40>ey && playerPos.y<ey+40){
+        alert('Game Over! Score: '+score);
+        startShooter();
+      }
+
+      // Collision with bullets
+      bullets.forEach((b,bi)=>{
+        if(b.x+5>parseInt(e.style.left) && b.x<parseInt(e.style.left)+40 &&
+           b.y+10>ey && b.y<ey+40){
+             container.removeChild(e);
+             container.removeChild(b.elem);
+             enemies.splice(enemies.indexOf(e),1);
+             bullets.splice(bi,1);
+             score++;
+             updateScore();
+             // Add new enemy
+             let newE=document.createElement('div');
+             newE.className='enemy';
+             newE.style.top='0px';
+             newE.style.left=Math.random()*280+'px';
+             container.appendChild(newE);
+             enemies.push(newE);
+        }
+      });
+    });
+
+    // Update player position
+    player.style.top=playerPos.y+'px';
+    player.style.left=playerPos.x+'px';
+  },20);
+
+  // Controls
+  document.onkeydown=function(e){
+    if(e.key==='ArrowLeft') playerPos.x=Math.max(0,playerPos.x-5);
+    if(e.key==='ArrowRight') playerPos.x=Math.min(280,playerPos.x+5);
+    if(e.key===' ') {
+      // Fire bullet
+      const b=document.createElement('div');
+      b.style.position='absolute';
+      b.style.width='5px'; b.style.height='10px';
+      b.style.background='red';
+      b.style.left=(playerPos.x+17)+'px';
+      b.style.top=playerPos.y+'px';
+      container.appendChild(b);
+      bullets.push({elem:b,x:playerPos.x+17,y:playerPos.y});
+    }
+  }
+}
+</script>
+
